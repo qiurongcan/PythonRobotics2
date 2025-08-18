@@ -4,7 +4,8 @@ Normal Distribution Transform (NDTGrid) mapping sample
 import matplotlib.pyplot as plt
 import numpy as np
 from collections import defaultdict
-
+import sys
+sys.path.append("./")
 from Mapping.grid_map_lib.grid_map_lib import GridMap
 from utils.plot import plot_covariance_ellipse
 
