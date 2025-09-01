@@ -1,6 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
-
+import sys
+sys.path.append("./")
 from utils.plot import plot_3d_vector_arrow, plot_triangle, set_equal_3d_axis
 
 show_animation = True

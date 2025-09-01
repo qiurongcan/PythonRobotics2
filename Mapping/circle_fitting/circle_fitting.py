@@ -128,8 +128,8 @@ def main():
     cx = -2.0  # initial x position of obstacle
     cy = -8.0  # initial y position of obstacle
     cr = 1.0  # obstacle radious
-    theta = np.deg2rad(30.0)  # obstacle moving direction
-    angle_reso = np.deg2rad(3.0)  # sensor angle resolution
+    theta = np.deg2rad(30.0)  # obstacle moving direction 每步圆沿该方向平移
+    angle_reso = np.deg2rad(3.0)  # sensor angle resolution 激光角度分辨率
 
     time = 0.0
     while time <= simtime:

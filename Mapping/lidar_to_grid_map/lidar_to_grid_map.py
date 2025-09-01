@@ -210,7 +210,7 @@ def main():
     """
     print(__file__, "start")
     xy_resolution = 0.02  # x-y grid resolution
-    ang, dist = file_read("lidar01.csv")
+    ang, dist = file_read(r"Mapping\lidar_to_grid_map\lidar01.csv")
     ox = np.sin(ang) * dist
     oy = np.cos(ang) * dist
     occupancy_map, min_x, max_x, min_y, max_y, xy_resolution = \
