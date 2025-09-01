@@ -3,7 +3,7 @@
 Path planning Sample Code with RRT with path smoothing
 
 @author: AtsushiSakai(@Atsushi_twi)
-
+生成一条RRT路径，对这条路径进行平滑
 """
 
 import math
@@ -17,7 +17,7 @@ from rrt import RRT
 
 show_animation = True
 
-
+# 计算路径长度
 def get_path_length(path):
     le = 0
     for i in range(len(path) - 1):
