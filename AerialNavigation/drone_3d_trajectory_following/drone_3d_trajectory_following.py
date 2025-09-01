@@ -69,6 +69,8 @@ def quad_sim(x_c, y_c, z_c):
 
     while True:
         while t <= T:
+            # 计算期望值
+            
             # des_x_pos = calculate_position(x_c[i], t)
             # des_y_pos = calculate_position(y_c[i], t)
             des_z_pos = calculate_position(z_c[i], t)

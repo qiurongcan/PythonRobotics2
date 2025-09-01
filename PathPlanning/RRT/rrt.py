@@ -3,7 +3,16 @@
 Path planning Sample Code with Randomized Rapidly-Exploring Random Trees (RRT)
 
 author: AtsushiSakai(@Atsushi_twi)
-
+RRT算法
+优点：
+1.概率完备性
+2.探索性强
+3.实时性
+缺点：
+1.路径非最优
+2.收敛速度慢
+3.包含冗余路径
+4.依赖调优参数，如步长、采样率等
 """
 
 import math
@@ -28,10 +37,12 @@ class RRT:
         def __init__(self, x, y):
             self.x = x
             self.y = y
+            # 父节点到该节点的 x 和 y 坐标序列
             self.path_x = []
             self.path_y = []
             self.parent = None
 
+    # 创建一个边界区域
     class AreaBounds:
 
         def __init__(self, area):
@@ -72,10 +83,10 @@ class RRT:
             self.play_area = self.AreaBounds(play_area)
         else:
             self.play_area = None
-        self.expand_dis = expand_dis
-        self.path_resolution = path_resolution
-        self.goal_sample_rate = goal_sample_rate
-        self.max_iter = max_iter
+        self.expand_dis = expand_dis # 扩展距离
+        self.path_resolution = path_resolution # 路径分辨率
+        self.goal_sample_rate = goal_sample_rate # 目标采样率
+        self.max_iter = max_iter # 最大迭代次数
         self.obstacle_list = obstacle_list
         self.node_list = []
         self.robot_radius = robot_radius
@@ -87,22 +98,26 @@ class RRT:
         animation: flag for animation on or off
         """
 
-        self.node_list = [self.start]
+        self.node_list = [self.start] # 存储所有探索到的有效节点
         for i in range(self.max_iter):
+            # 1.获取一个随机点
             rnd_node = self.get_random_node()
+            # 2.找到树中距离随机点最近的节点
             nearest_ind = self.get_nearest_node_index(self.node_list, rnd_node)
             nearest_node = self.node_list[nearest_ind]
-
+            # 3.从最近节点向随机节点方向扩展
             new_node = self.steer(nearest_node, rnd_node, self.expand_dis)
-
+            # 4.碰撞检测，检查节点 是否在可行区域且路径无碰撞
             if self.check_if_outside_play_area(new_node, self.play_area) and \
                self.check_collision(
                    new_node, self.obstacle_list, self.robot_radius):
+                # 5.添加节点
                 self.node_list.append(new_node)
 
             if animation and i % 5 == 0:
                 self.draw_graph(rnd_node)
 
+            # 6.检查是否到达目的点
             if self.calc_dist_to_goal(self.node_list[-1].x,
                                       self.node_list[-1].y) <= self.expand_dis:
                 final_node = self.steer(self.node_list[-1], self.end,
@@ -116,25 +131,30 @@ class RRT:
 
         return None  # cannot find path
 
+    # 方向控制
     def steer(self, from_node, to_node, extend_length=float("inf")):
 
         new_node = self.Node(from_node.x, from_node.y)
+        # 计算from_node 到 to_node 的距离和角度
         d, theta = self.calc_distance_and_angle(new_node, to_node)
 
+        # 初始化节点路径列表
         new_node.path_x = [new_node.x]
         new_node.path_y = [new_node.y]
 
         if extend_length > d:
             extend_length = d
 
+        # 计算需要扩展多少步
         n_expand = math.floor(extend_length / self.path_resolution)
-
+        # 一步步扩展，并计算路径
         for _ in range(n_expand):
             new_node.x += self.path_resolution * math.cos(theta)
             new_node.y += self.path_resolution * math.sin(theta)
             new_node.path_x.append(new_node.x)
             new_node.path_y.append(new_node.y)
-
+        
+        # 精细化处理，有可能扩展n步以后，可能没有正好到达目标点
         d, _ = self.calc_distance_and_angle(new_node, to_node)
         if d <= self.path_resolution:
             new_node.path_x.append(to_node.x)
@@ -146,6 +166,7 @@ class RRT:
 
         return new_node
 
+    # 反向搜索路径
     def generate_final_course(self, goal_ind):
         path = [[self.end.x, self.end.y]]
         node = self.node_list[goal_ind]
@@ -162,10 +183,12 @@ class RRT:
         return math.hypot(dx, dy)
 
     def get_random_node(self):
+        # 概率判断
         if random.randint(0, 100) > self.goal_sample_rate:
             rnd = self.Node(
                 random.uniform(self.min_rand, self.max_rand),
                 random.uniform(self.min_rand, self.max_rand))
+        # 具有少量概率采用目标点
         else:  # goal point sampling
             rnd = self.Node(self.end.x, self.end.y)
         return rnd
@@ -213,6 +236,7 @@ class RRT:
 
     @staticmethod
     def get_nearest_node_index(node_list, rnd_node):
+        # 随机点到当前路径点的最近点，并返回索引
         dlist = [(node.x - rnd_node.x)**2 + (node.y - rnd_node.y)**2
                  for node in node_list]
         minind = dlist.index(min(dlist))
@@ -224,7 +248,7 @@ class RRT:
 
         if play_area is None:
             return True  # no play_area was defined, every pos should be ok
-
+        # 计算是否超出规定边界
         if node.x < play_area.xmin or node.x > play_area.xmax or \
            node.y < play_area.ymin or node.y > play_area.ymax:
             return False  # outside - bad
@@ -233,10 +257,11 @@ class RRT:
 
     @staticmethod
     def check_collision(node, obstacleList, robot_radius):
+        """精确碰撞检测"""
 
         if node is None:
             return False
-
+        # 计算点到障碍物中心的距离平方并与膨胀后的障碍物半径平方比较，避免了耗时的开方运算
         for (ox, oy, size) in obstacleList:
             dx_list = [ox - x for x in node.path_x]
             dy_list = [oy - y for y in node.path_y]
@@ -249,9 +274,10 @@ class RRT:
 
     @staticmethod
     def calc_distance_and_angle(from_node, to_node):
+        # @staticmethod表示不用实例化即可调用
         dx = to_node.x - from_node.x
         dy = to_node.y - from_node.y
-        d = math.hypot(dx, dy)
+        d = math.hypot(dx, dy) # 计算欧几里得距离
         theta = math.atan2(dy, dx)
         return d, theta
 
