@@ -18,13 +18,14 @@ def rot_mat_2d(angle):
     --------
     >>> angle_mod(-4.0)
 
-
+    创建一个绕Z轴旋转的矩阵3x3
     """
     return Rot.from_euler('z', angle).as_matrix()[0:2, 0:2]
 
 
 def angle_mod(x, zero_2_2pi=False, degree=False):
     """
+    将角度值规范到一定为范围内
     Angle modulo operation
     Default angle modulo range is [-pi, pi)
 

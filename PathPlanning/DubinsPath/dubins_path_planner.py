@@ -1,17 +1,26 @@
+'''
+@Descripttion: 
+@version: 
+@encoding: utf-8
+@Author: qiurongcan
+Date: 2025-08-18 17:19:10
+LastEditTime: 2025-09-02 10:57:58
+'''
 """
 
 Dubins path planner sample code
 
 author Atsushi Sakai(@Atsushi_twi)
-
+Dubins路径规划器
 """
 import sys
 import pathlib
-sys.path.append(str(pathlib.Path(__file__).parent.parent.parent))
-
+# sys.path.append("../../")
+sys.path.append(str(pathlib.Path(__file__).parent.parent.parent)+"/utils")
+# print(str(pathlib.Path(__file__).parent.parent.parent))
 from math import sin, cos, atan2, sqrt, acos, pi, hypot
 import numpy as np
-from utils.angle import angle_mod, rot_mat_2d
+from angle import angle_mod, rot_mat_2d
 
 show_animation = True
 
@@ -87,7 +96,9 @@ def plan_dubins_path(s_x, s_y, s_yaw, g_x, g_y, g_yaw, curvature,
         planning_funcs = [_PATH_TYPE_MAP[ptype] for ptype in selected_types]
 
     # calculate local goal x, y, yaw
+    # 全局坐标系转化为局部坐标系
     l_rot = rot_mat_2d(s_yaw)
+    # 坐标变换和角度变换：将问题简化为从原点出发（0，0），航向角为0的路径规划问题
     le_xy = np.stack([g_x - s_x, g_y - s_y]).T @ l_rot
     local_goal_x = le_xy[0]
     local_goal_y = le_xy[1]
@@ -98,6 +109,7 @@ def plan_dubins_path(s_x, s_y, s_yaw, g_x, g_y, g_yaw, curvature,
         planning_funcs)
 
     # Convert a local coordinate path to the global coordinate
+    # 坐标系逆转换，从局部变成全局
     rot = rot_mat_2d(-s_yaw)
     converted_xy = np.stack([lp_x, lp_y]).T @ rot
     x_list = converted_xy[:, 0] + s_x
@@ -119,20 +131,25 @@ def _calc_trig_funcs(alpha, beta):
     cos_ab = cos(alpha - beta)
     return sin_a, sin_b, cos_a, cos_b, cos_ab
 
-
+# 左转 - 直行 - 左转
 def _LSL(alpha, beta, d):
+    # 计算所需的三角函数值
     sin_a, sin_b, cos_a, cos_b, cos_ab = _calc_trig_funcs(alpha, beta)
     mode = ["L", "S", "L"]
+    # 中间直线段长度平方计算
     p_squared = 2 + d ** 2 - (2 * cos_ab) + (2 * d * (sin_a - sin_b))
+    # 有效性检查
     if p_squared < 0:  # invalid configuration
         return None, None, None, mode
+    # 切点角度计算
     tmp = atan2((cos_b - cos_a), d + sin_a - sin_b)
+    # 计算三段路径
     d1 = _mod2pi(-alpha + tmp)
     d2 = sqrt(p_squared)
     d3 = _mod2pi(beta - tmp)
     return d1, d2, d3, mode
 
-
+# 右转 - 直行 - 右转
 def _RSR(alpha, beta, d):
     sin_a, sin_b, cos_a, cos_b, cos_ab = _calc_trig_funcs(alpha, beta)
     mode = ["R", "S", "R"]
@@ -145,7 +162,7 @@ def _RSR(alpha, beta, d):
     d3 = _mod2pi(-beta + tmp)
     return d1, d2, d3, mode
 
-
+# 左转 - 直行 - 右转
 def _LSR(alpha, beta, d):
     sin_a, sin_b, cos_a, cos_b, cos_ab = _calc_trig_funcs(alpha, beta)
     p_squared = -2 + d ** 2 + (2 * cos_ab) + (2 * d * (sin_a + sin_b))
@@ -158,7 +175,7 @@ def _LSR(alpha, beta, d):
     d3 = _mod2pi(-_mod2pi(beta) + tmp)
     return d2, d1, d3, mode
 
-
+# 右转 - 直行 - 左转
 def _RSL(alpha, beta, d):
     sin_a, sin_b, cos_a, cos_b, cos_ab = _calc_trig_funcs(alpha, beta)
     p_squared = d ** 2 - 2 + (2 * cos_ab) - (2 * d * (sin_a + sin_b))
@@ -171,7 +188,7 @@ def _RSL(alpha, beta, d):
     d3 = _mod2pi(beta - tmp)
     return d2, d1, d3, mode
 
-
+# 右转 - 左转 - 右转
 def _RLR(alpha, beta, d):
     sin_a, sin_b, cos_a, cos_b, cos_ab = _calc_trig_funcs(alpha, beta)
     mode = ["R", "L", "R"]
@@ -183,7 +200,7 @@ def _RLR(alpha, beta, d):
     d3 = _mod2pi(alpha - beta - d1 + d2)
     return d1, d2, d3, mode
 
-
+# 左转 - 右转 - 左转
 def _LRL(alpha, beta, d):
     sin_a, sin_b, cos_a, cos_b, cos_ab = _calc_trig_funcs(alpha, beta)
     mode = ["L", "R", "L"]
@@ -195,7 +212,7 @@ def _LRL(alpha, beta, d):
     d3 = _mod2pi(_mod2pi(beta) - alpha - d1 + _mod2pi(d2))
     return d1, d2, d3, mode
 
-
+# 六种基本路径类型
 _PATH_TYPE_MAP = {"LSL": _LSL, "RSR": _RSR, "LSR": _LSR, "RSL": _RSL,
                   "RLR": _RLR, "LRL": _LRL, }
 
@@ -204,24 +221,26 @@ def _dubins_path_planning_from_origin(end_x, end_y, end_yaw, curvature,
                                       step_size, planning_funcs):
     dx = end_x
     dy = end_y
-    d = hypot(dx, dy) * curvature
+    d = hypot(dx, dy) * curvature # 归一化距离
 
-    theta = _mod2pi(atan2(dy, dx))
-    alpha = _mod2pi(-theta)
-    beta = _mod2pi(end_yaw - theta)
+    theta = _mod2pi(atan2(dy, dx)) # 目标点相对于x轴的角度
+    alpha = _mod2pi(-theta) # 起点航向的相对角度
+    beta = _mod2pi(end_yaw - theta) # 终点航向的相对角度
 
     best_cost = float("inf")
     b_d1, b_d2, b_d3, b_mode = None, None, None, None
 
+    # 尝试每种路径
     for planner in planning_funcs:
         d1, d2, d3, mode = planner(alpha, beta, d)
         if d1 is None:
             continue
 
         cost = (abs(d1) + abs(d2) + abs(d3))
-        if best_cost > cost:  # Select minimum length one.
+        if best_cost > cost:  # Select minimum length one. 选择最短路径
             b_d1, b_d2, b_d3, b_mode, best_cost = d1, d2, d3, mode, cost
 
+    # 生成最短路径
     lengths = [b_d1, b_d2, b_d3]
     x_list, y_list, yaw_list = _generate_local_course(lengths, b_mode,
                                                       curvature, step_size)
@@ -283,8 +302,9 @@ def _generate_local_course(lengths, modes, max_curvature, step_size):
 def main():
     print("Dubins path planner sample start!!")
     import matplotlib.pyplot as plt
-    from utils.plot import plot_arrow
+    from plot import plot_arrow
 
+    # 起始点+偏航角
     start_x = 1.0  # [m]
     start_y = 1.0  # [m]
     start_yaw = np.deg2rad(45.0)  # [rad]
@@ -293,7 +313,7 @@ def main():
     end_y = -3.0  # [m]
     end_yaw = np.deg2rad(-45.0)  # [rad]
 
-    curvature = 1.0
+    curvature = 1.0 # 曲率和转弯半径
 
     path_x, path_y, path_yaw, mode, lengths = plan_dubins_path(start_x,
                                                                start_y,
@@ -303,6 +323,7 @@ def main():
                                                                end_yaw,
                                                                curvature)
 
+    # print(lengths)
     if show_animation:
         plt.plot(path_x, path_y, label="".join(mode))
         plot_arrow(start_x, start_y, start_yaw)

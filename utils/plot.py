@@ -9,7 +9,8 @@ from matplotlib.patches import FancyArrowPatch
 from mpl_toolkits.mplot3d.proj3d import proj_transform
 from mpl_toolkits.mplot3d import Axes3D
 
-from utils.angle import rot_mat_2d
+# from utils.angle import rot_mat_2d
+from angle import rot_mat_2d
 
 
 def plot_covariance_ellipse(x, y, cov, chi2=3.0, color="-r", ax=None):
