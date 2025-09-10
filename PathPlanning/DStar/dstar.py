@@ -5,36 +5,37 @@ D* grid planning
 author: Nirnay Roy
 
 See Wikipedia article (https://en.wikipedia.org/wiki/D*)
-
+动态A*算法
+Dynamic AStar
 """
 import math
-
-
 from sys import maxsize
 
 import matplotlib.pyplot as plt
 
 show_animation = True
 
-
+# 状态类
 class State:
 
     def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.parent = None
-        self.state = "."
-        self.t = "new"  # tag for state
-        self.h = 0
-        self.k = 0
+        self.x = x # x坐标
+        self.y = y # y坐标
+        self.parent = None # 父节点 用于回溯和重建路径
+        self.state = "." # 状态 
+        self.t = "new"  # tag for state [new 尚未处理 open 在开放列表待处理 close已经处理完成]
+        self.h = 0 # 到目标的估计代价
+        self.k = 0 # 帮助算法如何处理节点
 
+    # 计算到另一个节点的代价
     def cost(self, state):
         if self.state == "#" or state.state == "#":
-            return maxsize
+            return maxsize # 返回无穷大
 
         return math.sqrt(math.pow((self.x - state.x), 2) +
                          math.pow((self.y - state.y), 2))
 
+    # 设置节点状态
     def set_state(self, state):
         """
         .: new
@@ -47,7 +48,7 @@ class State:
             return
         self.state = state
 
-
+# 地图类
 class Map:
 
     def __init__(self, row, col):
@@ -63,7 +64,7 @@ class Map:
                 tmp.append(State(i, j))
             map_list.append(tmp)
         return map_list
-
+    # 获取指定节点的8邻域节点
     def get_neighbors(self, state):
         state_list = []
         for i in [-1, 0, 1]:
@@ -77,6 +78,7 @@ class Map:
                 state_list.append(self.map[state.x + i][state.y + j])
         return state_list
 
+    # 设置障碍物
     def set_obstacle(self, point_list):
         for x, y in point_list:
             if x < 0 or x >= self.row or y < 0 or y >= self.col:
@@ -95,7 +97,7 @@ class Dstar:
 
         if x is None:
             return -1
-
+        # 获取最小的k值
         k_old = self.get_kmin()
         self.remove(x)
 
@@ -124,6 +126,7 @@ class Dstar:
                             self.insert(y, y.h)
         return self.get_kmin()
 
+    # 返回开放列表中 k值最小的节点
     def min_state(self):
         if not self.open_list:
             return None
@@ -160,12 +163,14 @@ class Dstar:
 
         rx = []
         ry = []
-
+        
+        # 从目标节点开始反向搜索
         self.insert(end, 0.0)
 
         while True:
+            # 反向搜索，从终点向起点搜索
             self.process_state()
-            if start.t == "close":
+            if start.t == "close": # 当起点被标记的时候，说明找到了最优路径
                 break
 
         start.set_state("s")
@@ -174,6 +179,7 @@ class Dstar:
         s.set_state("e")
         tmp = start
 
+        # 第一次搜索完成后 添加新的障碍物
         AddNewObstacle(self.map) # add new obstacle after the first search finished
 
         while tmp != end:
@@ -183,6 +189,9 @@ class Dstar:
             if show_animation:
                 plt.plot(rx, ry, "-r")
                 plt.pause(0.01)
+            
+            # 调用A*算法重新规划的机制
+            # 如果父节点是障碍物时， 只更新受影响的部分
             if tmp.parent.state == "#":
                 self.modify(tmp)
                 continue
@@ -191,6 +200,7 @@ class Dstar:
 
         return rx, ry
 
+    # 增量式更新，只规划遇到障碍物的部分
     def modify(self, state):
         self.modify_cost(state)
         while True:
@@ -229,6 +239,7 @@ def main():
     for i in range(0, 40):
         ox.append(40)
         oy.append(60 - i)
+    # 设置障碍物
     m.set_obstacle([(i, j) for i, j in zip(ox, oy)])
 
     start = [10, 10]
@@ -241,6 +252,10 @@ def main():
 
     start = m.map[start[0]][start[1]]
     end = m.map[goal[0]][goal[1]]
+
+    # ======================= 生成地图和地图中的起始点 ========================
+
+
     dstar = Dstar(m)
     rx, ry = dstar.run(start, end)
 
