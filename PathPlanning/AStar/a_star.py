@@ -37,8 +37,10 @@ class AStarPlanner:
         self.motion = self.get_motion_model()
         self.calc_obstacle_map(ox, oy)
 
+    # 表示网格中每个点
     class Node:
         def __init__(self, x, y, cost, parent_index):
+            # f(n) = g(n) + h(n)
             self.x = x  # index of grid
             self.y = y  # index of grid
             self.cost = cost
@@ -62,7 +64,7 @@ class AStarPlanner:
             rx: x position list of the final path
             ry: y position list of the final path
         """
-
+        # 全局坐标系转化为相对坐标系下的坐标，并根据分辨率进行缩放
         start_node = self.Node(self.calc_xy_index(sx, self.min_x),
                                self.calc_xy_index(sy, self.min_y), 0.0, -1)
         goal_node = self.Node(self.calc_xy_index(gx, self.min_x),
@@ -75,7 +77,8 @@ class AStarPlanner:
             if len(open_set) == 0:
                 print("Open set is empty..")
                 break
-
+            # 计算 f(n) = g(n) + h(n) 最小的节点
+            # 返回最小的键，根据值来选择
             c_id = min(
                 open_set,
                 key=lambda o: open_set[o].cost + self.calc_heuristic(goal_node,
@@ -111,6 +114,7 @@ class AStarPlanner:
                 node = self.Node(current.x + self.motion[i][0],
                                  current.y + self.motion[i][1],
                                  current.cost + self.motion[i][2], c_id)
+                # 生成唯一的索引
                 n_id = self.calc_grid_index(node)
 
                 # If the node is not safe, do nothing
@@ -131,6 +135,7 @@ class AStarPlanner:
 
         return rx, ry
 
+    # 计算最终路径
     def calc_final_path(self, goal_node, closed_set):
         # generate final course
         rx, ry = [self.calc_grid_position(goal_node.x, self.min_x)], [
@@ -146,7 +151,9 @@ class AStarPlanner:
 
     @staticmethod
     def calc_heuristic(n1, n2):
+        # 欧几里得距离
         w = 1.0  # weight of heuristic
+        # w = 1.0 可采纳性 h(n) < 实际代价
         d = w * math.hypot(n1.x - n2.x, n1.y - n2.y)
         return d
 
@@ -157,10 +164,12 @@ class AStarPlanner:
         :param index:
         :param min_position:
         :return:
+        计算实际坐标
         """
         pos = index * self.resolution + min_position
         return pos
 
+    # 实际坐标转化为网格索引 相对于起点坐标
     def calc_xy_index(self, position, min_pos):
         return round((position - min_pos) / self.resolution)
 
@@ -170,7 +179,8 @@ class AStarPlanner:
     def verify_node(self, node):
         px = self.calc_grid_position(node.x, self.min_x)
         py = self.calc_grid_position(node.y, self.min_y)
-
+        
+        # 先判断是否越界
         if px < self.min_x:
             return False
         elif py < self.min_y:
@@ -180,7 +190,7 @@ class AStarPlanner:
         elif py >= self.max_y:
             return False
 
-        # collision check
+        # collision check 再判断是否在碰撞地图中
         if self.obstacle_map[node.x][node.y]:
             return False
 
@@ -199,6 +209,7 @@ class AStarPlanner:
 
         self.x_width = round((self.max_x - self.min_x) / self.resolution)
         self.y_width = round((self.max_y - self.min_y) / self.resolution)
+        # 相当于x和y方向上的步长
         print("x_width:", self.x_width)
         print("y_width:", self.y_width)
 
@@ -217,6 +228,7 @@ class AStarPlanner:
 
     @staticmethod
     def get_motion_model():
+        # 获取运动模型
         # dx, dy, cost
         motion = [[1, 0, 1],
                   [0, 1, 1],

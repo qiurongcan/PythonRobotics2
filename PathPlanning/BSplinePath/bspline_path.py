@@ -7,13 +7,13 @@ author: Atsushi Sakai (@Atsushi_twi)
 """
 import sys
 import pathlib
-sys.path.append(str(pathlib.Path(__file__).parent.parent.parent))
+sys.path.append(str(pathlib.Path(__file__).parent.parent.parent) + "/utils")
 
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate as interpolate
 
-from utils.plot import plot_curvature
+from plot import plot_curvature
 
 
 def approximate_b_spline_path(x: list,

@@ -61,6 +61,8 @@ class DijkstraPlanner:
         output:
             rx: x position list of the final path
             ry: y position list of the final path
+            遇到障碍物会回弹
+            如果是空旷地图，会搜索很久
         """
 
         start_node = self.Node(self.calc_xy_index(sx, self.min_x),
@@ -72,6 +74,7 @@ class DijkstraPlanner:
         open_set[self.calc_index(start_node)] = start_node
 
         while True:
+            # Dijkstra 只根据实际代价选择节点
             c_id = min(open_set, key=lambda o: open_set[o].cost)
             current = open_set[c_id]
 
@@ -86,6 +89,7 @@ class DijkstraPlanner:
                 if len(closed_set.keys()) % 10 == 0:
                     plt.pause(0.001)
 
+            # 找到目标
             if current.x == goal_node.x and current.y == goal_node.y:
                 print("Find goal")
                 goal_node.parent_index = current.parent_index
@@ -105,6 +109,7 @@ class DijkstraPlanner:
                                  current.cost + move_cost, c_id)
                 n_id = self.calc_index(node)
 
+                # 如果同一个点，不同父节点，但是索引是存在的
                 if n_id in closed_set:
                     continue
 
@@ -114,6 +119,7 @@ class DijkstraPlanner:
                 if n_id not in open_set:
                     open_set[n_id] = node  # Discover a new node
                 else:
+                    # 如果节点已经存在，则比较存在[新]A节点的代价 和 A节点的代价 根据大小更新
                     if open_set[n_id].cost >= node.cost:
                         # This path is the best until now. record it!
                         open_set[n_id] = node
@@ -142,6 +148,7 @@ class DijkstraPlanner:
     def calc_xy_index(self, position, minp):
         return round((position - minp) / self.resolution)
 
+    # 生成唯一索引
     def calc_index(self, node):
         return (node.y - self.min_y) * self.x_width + (node.x - self.min_x)
 
