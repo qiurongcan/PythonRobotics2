@@ -48,7 +48,7 @@ class State:
             return
         self.state = state
 
-# 地图类
+# 地图类 地图中的每一个点需要用节点类进行维护
 class Map:
 
     def __init__(self, row, col):
@@ -108,6 +108,11 @@ class Dstar:
                     x.h = y.h + x.cost(y)
         if k_old == x.h:
             for y in self.map.get_neighbors(x):
+                """
+                1.如果是全新节点直接优化
+                2.y是原本的父节点是x，但是代价发生了变化（因为此时的x已经最佳状态了）
+                3.y的父节点不是x，但是通过x能够得到更优化的路径，则优化
+                """
                 if y.t == "new" or y.parent == x and y.h != x.h + x.cost(y) \
                         or y.parent != x and y.h > x.h + x.cost(y):
                     y.parent = x
@@ -140,17 +145,24 @@ class Dstar:
         return k_min
 
     def insert(self, state, h_new):
+        """
+        将一个节点以新的代价值(h_new)插入或重新插入到开放列表中
+        """
+
+        # 在添加h的时候，还需要维护历史最小的h值
         if state.t == "new":
             state.k = h_new
         elif state.t == "open":
             state.k = min(state.k, h_new)
         elif state.t == "close":
+            # 历史最小值k是【它被关闭时的h值】
             state.k = min(state.h, h_new)
         state.h = h_new
         state.t = "open"
         self.open_list.add(state)
 
     def remove(self, state):
+        # 从开放节点列表中移除节点到关闭节点
         if state.t == "open":
             state.t = "close"
         self.open_list.remove(state)
