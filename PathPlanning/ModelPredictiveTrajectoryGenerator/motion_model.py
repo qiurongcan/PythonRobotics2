@@ -1,7 +1,17 @@
+'''
+@Descripttion: 
+@version: 
+@encoding: utf-8
+@Author: qiurongcan
+Date: 2025-08-18 17:19:11
+LastEditTime: 2025-09-15 19:32:31
+'''
 import math
+import sys
+sys.path.append("./utils")
 import numpy as np
 from scipy.interpolate import interp1d
-from utils.angle import angle_mod
+from angle import angle_mod
 
 # motion parameter
 L = 1.0  # wheel base
