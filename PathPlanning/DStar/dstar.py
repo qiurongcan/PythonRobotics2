@@ -168,6 +168,7 @@ class Dstar:
         self.open_list.remove(state)
 
     def modify_cost(self, x):
+        # 如果障碍物在路径中
         if x.t == "close":
             self.insert(x, x.parent.h + x.cost(x.parent))
 

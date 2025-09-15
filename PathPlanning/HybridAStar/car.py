@@ -9,14 +9,14 @@ author: Zheng Zh (@Zhengzh)
 import sys
 import pathlib
 root_dir = pathlib.Path(__file__).parent.parent.parent
-sys.path.append(str(root_dir))
+sys.path.append(str(root_dir) + '/utils')
 
 from math import cos, sin, tan, pi
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-from utils.angle import rot_mat_2d
+from angle import rot_mat_2d
 
 WB = 3.0  # rear to front wheel
 W = 2.0  # width of car

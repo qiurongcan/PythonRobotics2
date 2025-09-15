@@ -42,6 +42,7 @@ class DStarLite:
 
     # Please adjust the heuristic function (h) if you change the list of
     # possible motions
+    # 设置八个运动方向
     motions = [
         Node(1, 0, 1),
         Node(0, 1, 1),
